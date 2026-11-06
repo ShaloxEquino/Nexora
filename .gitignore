@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.neon/
+*.pem
+*.key
+coverage/
+*.log
+data/socialtrace_db.json
+extension/dist/
+extension/*.zip
+backend/dist/
+.neon

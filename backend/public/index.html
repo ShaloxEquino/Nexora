@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXORA — Admin Console</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Navigation (hidden when logged out) -->
+    <header id="mainHeader" class="header" style="display: none;">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="brand-hex">⬡</span>
+          <span class="brand-name">NEXORA</span>
+          <span class="badge badge-purple" id="headerRole">ADMIN</span>
+        </div>
+        <nav class="nav-links">
+          <a href="#/overview" class="nav-link" data-route="overview">Overview</a>
+          <a href="#/licenses" class="nav-link" data-route="licenses">Licenses</a>
+          <a href="#/customers" class="nav-link" data-route="customers">Customers</a>
+          <a href="#/developers" class="nav-link owner-only" data-route="developers" style="display:none;">Developers</a>
+          <a href="#/audit" class="nav-link" data-route="audit">Audit & Security</a>
+        </nav>
+        <div class="header-user">
+          <span id="userEmail" class="user-email"></span>
+          <button id="logoutBtn" class="btn btn-ghost btn-sm">Log out</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global Notification Banner -->
+    <div id="notificationArea" class="notification-container"></div>
+
+    <!-- Main Container -->
+    <main class="main-container">
+      <!-- VIEW: LOGIN -->
+      <section id="view-login" class="view">
+        <div class="login-wrapper">
+          <div class="login-card glass">
+            <div class="login-header">
+              <div class="brand-hex lg">⬡</div>
+              <h1>NEXORA Admin</h1>
+              <p class="subtitle">Platform license and device management</p>
+            </div>
+            <form id="loginForm" class="form">
+              <div class="form-group">
+                <label for="loginEmail">Email Address</label>
+                <input type="email" id="loginEmail" class="input" placeholder="admin@nexora.io" required autocomplete="username" />
+              </div>
+              <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" class="input" placeholder="••••••••••••" required autocomplete="current-password" />
+              </div>
+              <div id="loginError" class="alert alert-error" style="display:none;"></div>
+              <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">Sign In</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: OVERVIEW -->
+      <section id="view-overview" class="view" style="display: none;">
+        <div class="view-header">
+          <div>
+            <h2>System Overview</h2>
+            <p class="subtitle">Real-time platform activity & metrics</p>
+          </div>
+          <button id="refreshOverviewBtn" class="btn btn-secondary btn-sm">↻ Refresh</button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card glass">
+            <span class="stat-label">Total Licenses</span>
+            <span class="stat-number" id="statTotalLicenses">—</span>
+            <span class="stat-sub" id="statActiveLicenses">Active: —</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-label">Unused Licenses</span>
+            <span class="stat-number" id="statUnusedLicenses">—</span>
+            <span class="stat-sub">Ready to assign</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-label">Expired / Revoked</span>
+            <span class="stat-number" id="statInactiveLicenses">—</span>
+            <span class="stat-sub" id="statRevokedBreakdown">Revoked: —</span>
+          </div>
+          <div class="stat-card glass">
+            <span class="stat-label">Customers</span>
+            <span class="stat-number" id="statTotalCustomers">—</span>
+            <span class="stat-sub" id="statBannedCustomers">Banned: —</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card glass">
+            <div class="card-header">
+              <h3>System Health</h3>
+            </div>
+            <div class="health-list">
+              <div class="health-item">
+                <span>Database Status</span>
+                <span id="healthDbStatus" class="badge">Checking…</span>
+              </div>
+              <div class="health-item">
+                <span>Server Uptime</span>
+                <span id="healthUptime" class="code-pill">—</span>
+              </div>
+              <div class="health-item">
+                <span>Developers Active</span>
+                <span id="statDevsActive" class="code-pill">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card glass">
+            <div class="card-header">
+              <h3>Recent Audit Activity</h3>
+            </div>
+            <div id="overviewAuditList" class="activity-feed">
+              <div class="loading-spinner">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW: LICENSES -->
+      <section id="view-licenses" class="view" style="display: none;">
+        <div class="view-header">
+          <div>
+            <h2>Licenses</h2>
+            <p class="subtitle">Issue, search, inspect and revoke keys</p>
+          </div>
+          <button id="openBulkModalBtn" class="btn btn-primary">+ Generate Licenses</button>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar glass">
+          <div class="filter-group">
+            <input type="text" id="licenseSearchInput" class="input input-sm" placeholder="Search by ID or notes…" />
+            <select id="licenseStatusFilter" class="select select-sm">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="unused">Unused</option>
+              <option value="expired">Expired</option>
+              <option value="revoked">Revoked</option>
+              <option value="suspended">Suspended</option>
+            </select>
+            <select id="licensePlanFilter" class="select select-sm">
+              <option value="">All Plans</option>
+              <option value="TRIAL">Trial (5 min)</option>
+              <option value="DAY">Daily</option>
+              <option value="3DAY">3-Day</option>
+              <option value="WEEK">Weekly</option>
+              <option value="MONTH">Monthly</option>
+              <option value="LIFE">Lifetime</option>
+            </select>
+            <button id="applyLicenseFiltersBtn" class="btn btn-secondary btn-sm">Filter</button>
+          </div>
+        </div>
+
+        <!-- Licenses Table -->
+        <div class="table-card glass">
+          <table class="data-table" id="licensesTable">
+            <thead>
+              <tr>
+                <th>License ID</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Device Limit</th>
+                <th>Expires</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="licensesTableBody">
+              <tr><td colspan="7" class="text-center py-4">Loading licenses…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW: CUSTOMERS -->
+      <section id="view-customers" class="view" style="display: none;">
+        <div class="view-header">
+          <div>
+            <h2>Customers</h2>
+            <p class="subtitle">Customer accounts and policy enforcement</p>
+          </div>
+        </div>
+
+        <div class="filter-bar glass">
+          <div class="filter-group">
+            <input type="text" id="customerSearchInput" class="input input-sm" placeholder="Search email…" />
+            <button id="searchCustomersBtn" class="btn btn-secondary btn-sm">Search</button>
+          </div>
+        </div>
+
+        <div class="table-card glass">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Customer ID</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Registered</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="customersTableBody">
+              <tr><td colspan="5" class="text-center py-4">Loading customers…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW: DEVELOPERS (OWNER only) -->
+      <section id="view-developers" class="view" style="display: none;">
+        <div class="view-header">
+          <div>
+            <h2>Developer Accounts</h2>
+            <p class="subtitle">Manage operator accounts and RBAC permissions</p>
+          </div>
+          <button id="openCreateDevModalBtn" class="btn btn-primary">+ Create Developer</button>
+        </div>
+
+        <div class="table-card glass">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Permissions</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="developersTableBody">
+              <tr><td colspan="6" class="text-center py-4">Loading developers…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW: AUDIT & SECURITY -->
+      <section id="view-audit" class="view" style="display: none;">
+        <div class="view-header">
+          <div>
+            <h2>Audit & Security Logs</h2>
+            <p class="subtitle">Immutable chronological security and audit trail</p>
+          </div>
+          <button id="refreshAuditBtn" class="btn btn-secondary btn-sm">↻ Refresh</button>
+        </div>
+
+        <div class="tab-pill-bar">
+          <button class="pill-tab active" data-audit-tab="audit">Privileged Audit Events</button>
+          <button class="pill-tab" data-audit-tab="security">Security Alerts & Trips</button>
+        </div>
+
+        <div id="auditTabContent" class="table-card glass">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Actor</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>IP / UA</th>
+                <th>Metadata</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <tr><td colspan="6" class="text-center py-4">Loading audit logs…</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div id="securityTabContent" class="table-card glass" style="display:none;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Kind</th>
+                <th>IP</th>
+                <th>User Agent</th>
+                <th>Metadata</th>
+              </tr>
+            </thead>
+            <tbody id="securityTableBody">
+              <tr><td colspan="5" class="text-center py-4">Loading security events…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <!-- MODAL: Bulk Generate Licenses -->
+    <div id="bulkModal" class="modal-backdrop" style="display: none;">
+      <div class="modal glass">
+        <div class="modal-header">
+          <h3>Bulk Generate Licenses</h3>
+          <button class="modal-close-btn" data-close="bulkModal">✕</button>
+        </div>
+        <form id="bulkGenerateForm" class="form">
+          <div class="form-group">
+            <label for="bulkPlan">Plan</label>
+            <select id="bulkPlan" class="select" required>
+              <option value="TRIAL">Trial (5 minutes)</option>
+              <option value="DAY">Daily (24 hours)</option>
+              <option value="3DAY">3-Day (72 hours)</option>
+              <option value="WEEK" selected>Weekly (7 days)</option>
+              <option value="MONTH">Monthly (30 days)</option>
+              <option value="LIFE">Lifetime (Never expires)</option>
+            </select>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label for="bulkCount">Quantity (1 - 5000)</label>
+              <input type="number" id="bulkCount" class="input" min="1" max="5000" value="5" required />
+            </div>
+            <div class="form-group">
+              <label for="bulkDeviceLimit">Device Limit (1 - 10)</label>
+              <input type="number" id="bulkDeviceLimit" class="input" min="1" max="10" value="2" required />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="bulkActivationPolicy">Activation Policy</label>
+            <select id="bulkActivationPolicy" class="select" required>
+              <option value="on_first_use" selected>On First Use (clock starts on device activation)</option>
+              <option value="immediate">Immediate (clock starts at generation)</option>
+              <option value="scheduled">Scheduled (activates at pre-set date/time)</option>
+            </select>
+          </div>
+
+          <div class="form-group" id="scheduledAtGroup" style="display: none;">
+            <label for="bulkActivationAt">Scheduled Activation Time (ISO 8601)</label>
+            <input type="datetime-local" id="bulkActivationAt" class="input" />
+          </div>
+
+          <div class="form-group">
+            <label for="bulkNotes">Notes / Campaign Tag (optional)</label>
+            <input type="text" id="bulkNotes" class="input" placeholder="e.g. Q4 Beta testers" maxlength="500" />
+          </div>
+
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-close="bulkModal">Cancel</button>
+            <button type="submit" id="generateSubmitBtn" class="btn btn-primary">Generate Keys</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL: One-Time Key Display -->
+    <div id="keyDisplayModal" class="modal-backdrop" style="display: none;">
+      <div class="modal glass modal-lg">
+        <div class="modal-header">
+          <h3 class="text-warning">⚠ One-Time Key Display</h3>
+          <button class="modal-close-btn" data-close="keyDisplayModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-warning">
+            <strong>CRITICAL SECURITY NOTICE:</strong> These plaintext license keys are shown once and are <em>never stored in plaintext</em>. Lookups are handled strictly by HMAC hash. Copy and save them now.
+          </div>
+          <div class="form-group">
+            <label>Generated Keys (<span id="keyCountDisplay">0</span>)</label>
+            <textarea id="generatedKeysText" class="textarea mono" rows="8" readonly></textarea>
+          </div>
+          <div class="btn-group">
+            <button id="copyAllKeysBtn" class="btn btn-secondary btn-sm">Copy All Keys to Clipboard</button>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-primary" data-close="keyDisplayModal">I Have Saved These Keys</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Activations / Devices Inspection -->
+    <div id="activationsModal" class="modal-backdrop" style="display: none;">
+      <div class="modal glass modal-lg">
+        <div class="modal-header">
+          <h3>License Activations</h3>
+          <button class="modal-close-btn" data-close="activationsModal">✕</button>
+        </div>
+        <div class="modal-body">
+          <p class="subtitle mb-3" id="activationsLicenseTitle">License ID: —</p>
+          <div class="table-card glass">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Device ID</th>
+                  <th>IP</th>
+                  <th>Activated</th>
+                  <th>Last Seen</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="activationsTableBody">
+                <tr><td colspan="5" class="text-center py-3">Loading activations…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close="activationsModal">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Create Developer -->
+    <div id="createDevModal" class="modal-backdrop" style="display: none;">
+      <div class="modal glass">
+        <div class="modal-header">
+          <h3>Create Developer Account</h3>
+          <button class="modal-close-btn" data-close="createDevModal">✕</button>
+        </div>
+        <form id="createDevForm" class="form">
+          <div class="form-group">
+            <label for="devEmail">Email Address</label>
+            <input type="email" id="devEmail" class="input" placeholder="dev@nexora.io" required />
+          </div>
+          <div class="form-group">
+            <label for="devPassword">Initial Password (min 12 chars)</label>
+            <input type="password" id="devPassword" class="input" minlength="12" placeholder="••••••••••••" required />
+          </div>
+          <div class="form-group">
+            <label>Permissions</label>
+            <div class="checkbox-group">
+              <label class="checkbox-label">
+                <input type="checkbox" name="permissions" value="licenses.write" checked />
+                <span><code>licenses.write</code> (Generate, Revoke, Restore)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="permissions" value="customers.write" />
+                <span><code>customers.write</code> (Ban, Unban Customers)</span>
+              </label>
+              <label class="checkbox-label">
+                <input type="checkbox" name="permissions" value="audit.read" checked />
+                <span><code>audit.read</code> (View Audit & Security Logs)</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-ghost" data-close="createDevModal">Cancel</button>
+            <button type="submit" id="createDevSubmitBtn" class="btn btn-primary">Create Account</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

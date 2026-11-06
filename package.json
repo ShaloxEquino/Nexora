@@ -1,0 +1,21 @@
+{
+  "name": "nexora-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "shared",
+    "backend",
+    "extension",
+    "tests"
+  ],
+  "scripts": {
+    "dev": "bash scripts/dev.sh",
+    "build": "npm run build -w shared && npm run build -w backend && npm run build -w extension",
+    "test": "bash scripts/test.sh",
+    "migrate": "npm run migrate -w backend",
+    "bootstrap-owner": "npm run bootstrap-owner -w backend"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

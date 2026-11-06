@@ -1,0 +1,19 @@
+{
+  "name": "@nexora/shared",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/types.js",
+  "exports": {
+    "./types": "./dist/types.js",
+    "./plans": "./dist/plans.js",
+    "./api-contracts": "./dist/api-contracts.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

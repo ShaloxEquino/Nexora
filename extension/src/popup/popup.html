@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NEXORA</title>
+  <link rel="stylesheet" href="./popup.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="app-logo">
+      <span class="logo-icon">⬡</span>
+      <span class="logo-text">NEXORA</span>
+    </div>
+    <div id="licenseStatus" class="badge badge-neutral">Checking…</div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="assistant" role="tab" aria-selected="true">
+      🤖 Assistant
+    </button>
+    <button class="tab-btn" data-tab="privacy" role="tab">
+      🛡 Privacy
+    </button>
+    <button class="tab-btn" data-tab="productivity" role="tab">
+      ⚡ Tools
+    </button>
+    <button class="tab-btn" data-tab="devtools" role="tab">
+      🔧 Dev
+    </button>
+    <button class="tab-btn" data-tab="settings" role="tab">
+      ⚙ Settings
+    </button>
+  </nav>
+
+  <!-- Main content area -->
+  <main class="tab-content scroll-area">
+
+    <!-- ======== AI ASSISTANT ======== -->
+    <section id="tab-assistant" class="tab-panel active fade-in">
+      <div id="aiUnconfigured" class="error-state" style="display:none">
+        AI is not configured. Please set your endpoint and API key in Settings.
+      </div>
+      <div id="aiChat">
+        <div id="chatMessages" class="chat-messages scroll-area" role="log" aria-live="polite"></div>
+        <div class="chat-controls">
+          <div class="chat-input-row">
+            <textarea
+              id="chatInput"
+              class="textarea chat-input"
+              placeholder="Ask anything… (Shift+Enter for newline)"
+              rows="2"
+              aria-label="Chat input"
+            ></textarea>
+            <div class="chat-actions">
+              <button id="addContextBtn" class="btn btn-icon" title="Include page context (requires permission)">📄</button>
+              <button id="sendBtn" class="btn btn-primary btn-icon" title="Send (Enter)" aria-label="Send">▶</button>
+            </div>
+          </div>
+          <div id="contextNote" class="context-note" style="display:none">
+            Page context will be included in your next message.
+          </div>
+          <div class="chat-footer-row">
+            <button id="clearChatBtn" class="btn btn-ghost btn-sm">Clear</button>
+            <span id="streamingIndicator" style="display:none" class="streaming-dot">⬤ Streaming</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== PRIVACY GUARD ======== -->
+    <section id="tab-privacy" class="tab-panel fade-in" style="display:none">
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">🛡 Privacy Guard</span>
+          <label class="toggle" title="Enable/disable tracker blocking">
+            <input type="checkbox" id="privacyToggle" aria-label="Enable tracker blocking" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <p class="description-text">Blocks trackers and ads using <code>declarativeNetRequest</code>. No browsing data ever leaves your device.</p>
+        <div class="divider"></div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="trackerCount">0</div>
+            <div class="stat-label">Trackers Blocked</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="rulesCount">10</div>
+            <div class="stat-label">Active Rules</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-header">
+          <span class="section-title">Current Site</span>
+        </div>
+        <div class="list-item">
+          <span id="currentSiteDomain" class="text-sm">—</span>
+          <div class="btn-group">
+            <button id="allowSiteBtn" class="btn btn-sm btn-secondary">Allow</button>
+            <button id="blockSiteBtn" class="btn btn-sm btn-danger">Block</button>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+        <details>
+          <summary class="section-title" style="cursor:pointer">Allowlist / Blocklist</summary>
+          <div style="margin-top: var(--space-3);">
+            <div class="form-group">
+              <label class="label" for="allowlistArea">Allowlist (one domain per line)</label>
+              <textarea id="allowlistArea" class="textarea" rows="3" placeholder="example.com"></textarea>
+            </div>
+            <div class="form-group">
+              <label class="label" for="blocklistArea">Blocklist (one domain per line)</label>
+              <textarea id="blocklistArea" class="textarea" rows="3" placeholder="tracker.example.com"></textarea>
+            </div>
+            <button id="saveDomainLists" class="btn btn-primary btn-sm">Save Lists</button>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ======== PRODUCTIVITY ======== -->
+    <section id="tab-productivity" class="tab-panel fade-in" style="display:none">
+      <!-- Notes -->
+      <div class="card" style="margin-bottom: var(--space-3)">
+        <div class="section-header">
+          <span class="section-title">📝 Quick Notes</span>
+          <button id="saveNotesBtn" class="btn btn-sm btn-primary">Save</button>
+        </div>
+        <textarea id="notesArea" class="textarea" rows="5" placeholder="Type your notes here…" style="font-family: var(--font-sans)"></textarea>
+        <p class="description-text" style="margin-top: var(--space-2)">Notes are saved locally in your browser.</p>
+      </div>
+
+      <!-- Tab grouping -->
+      <div class="card" style="margin-bottom: var(--space-3)">
+        <div class="section-header">
+          <span class="section-title">📑 Tab Utilities</span>
+        </div>
+        <div class="btn-group-column">
+          <button id="groupTabsBtn" class="btn btn-secondary btn-sm">Group All Tabs by Domain</button>
+          <button id="closeOtherTabsBtn" class="btn btn-secondary btn-sm">Close Other Tabs</button>
+          <button id="copyAllUrlsBtn" class="btn btn-secondary btn-sm">Copy All Tab URLs</button>
+        </div>
+      </div>
+
+      <!-- Reading mode -->
+      <div class="card">
+        <div class="section-header">
+          <span class="section-title">📖 Page Utilities</span>
+        </div>
+        <div class="btn-group-column">
+          <button id="copyPageUrlBtn" class="btn btn-secondary btn-sm">Copy Page URL</button>
+          <button id="copyPageTitleBtn" class="btn btn-secondary btn-sm">Copy Page Title</button>
+          <button id="scrollTopBtn" class="btn btn-secondary btn-sm">Scroll to Top</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======== DEVELOPER TOOLS ======== -->
+    <section id="tab-devtools" class="tab-panel fade-in" style="display:none">
+      <div class="devtools-nav">
+        <button class="devtool-btn active" data-tool="json">JSON</button>
+        <button class="devtool-btn" data-tool="base64">Base64</button>
+        <button class="devtool-btn" data-tool="url">URL</button>
+        <button class="devtool-btn" data-tool="timestamp">Time</button>
+        <button class="devtool-btn" data-tool="jwt">JWT</button>
+        <button class="devtool-btn" data-tool="hash">Hash</button>
+      </div>
+
+      <div id="devtool-json" class="devtool-panel active">
+        <div class="form-group">
+          <label class="label" for="jsonInput">JSON Input</label>
+          <textarea id="jsonInput" class="textarea" rows="5" placeholder='{"key": "value"}'></textarea>
+        </div>
+        <div class="btn-group" style="margin-bottom: var(--space-3)">
+          <button id="jsonFormatBtn" class="btn btn-primary btn-sm">Format</button>
+          <button id="jsonMinifyBtn" class="btn btn-secondary btn-sm">Minify</button>
+          <button id="jsonClearBtn" class="btn btn-ghost btn-sm">Clear</button>
+        </div>
+        <div id="jsonOutput" class="code-block" style="display:none; min-height: 60px;"></div>
+        <div id="jsonError" class="error-state" style="display:none"></div>
+        <div id="jsonMeta" class="meta-row" style="display:none"></div>
+      </div>
+
+      <div id="devtool-base64" class="devtool-panel" style="display:none">
+        <div class="form-group">
+          <label class="label" for="b64Input">Text or Base64</label>
+          <textarea id="b64Input" class="textarea" rows="4" placeholder="Text to encode or Base64 to decode"></textarea>
+        </div>
+        <div class="btn-group" style="margin-bottom: var(--space-3)">
+          <button id="b64EncodeBtn" class="btn btn-primary btn-sm">Encode →</button>
+          <button id="b64DecodeBtn" class="btn btn-secondary btn-sm">← Decode</button>
+        </div>
+        <div id="b64Output" class="code-block" style="display:none"></div>
+        <div id="b64Error" class="error-state" style="display:none"></div>
+      </div>
+
+      <div id="devtool-url" class="devtool-panel" style="display:none">
+        <div class="form-group">
+          <label class="label" for="urlInput">URL to Parse</label>
+          <input type="text" id="urlInput" class="input" placeholder="https://example.com/path?q=1#hash" />
+        </div>
+        <button id="urlParseBtn" class="btn btn-primary btn-sm" style="margin-bottom: var(--space-3)">Parse</button>
+        <div id="urlOutput" style="display:none"></div>
+        <div id="urlError" class="error-state" style="display:none"></div>
+      </div>
+
+      <div id="devtool-timestamp" class="devtool-panel" style="display:none">
+        <div class="form-group">
+          <label class="label" for="tsInput">Timestamp or Date</label>
+          <input type="text" id="tsInput" class="input" placeholder="1700000000 or 2024-01-01T00:00:00Z" />
+        </div>
+        <div class="btn-group" style="margin-bottom: var(--space-3)">
+          <button id="tsConvertBtn" class="btn btn-primary btn-sm">Convert</button>
+          <button id="tsNowBtn" class="btn btn-secondary btn-sm">Now</button>
+        </div>
+        <div id="tsOutput" style="display:none"></div>
+        <div id="tsError" class="error-state" style="display:none"></div>
+      </div>
+
+      <div id="devtool-jwt" class="devtool-panel" style="display:none">
+        <div class="form-group">
+          <label class="label" for="jwtInput">JWT Token (never transmitted — local only)</label>
+          <textarea id="jwtInput" class="textarea" rows="4" placeholder="eyJhbGci…"></textarea>
+        </div>
+        <button id="jwtInspectBtn" class="btn btn-primary btn-sm" style="margin-bottom: var(--space-3)">Inspect Locally</button>
+        <div id="jwtOutput" style="display:none"></div>
+        <div id="jwtError" class="error-state" style="display:none"></div>
+      </div>
+
+      <div id="devtool-hash" class="devtool-panel" style="display:none">
+        <div class="form-group">
+          <label class="label" for="hashInput">Text to Hash</label>
+          <textarea id="hashInput" class="textarea" rows="3" placeholder="Enter text…"></textarea>
+        </div>
+        <div class="btn-group" style="margin-bottom: var(--space-3)">
+          <button id="sha256Btn" class="btn btn-primary btn-sm">SHA-256</button>
+          <button id="sha1Btn" class="btn btn-secondary btn-sm">SHA-1</button>
+          <button id="uuidBtn" class="btn btn-secondary btn-sm">UUID v4</button>
+        </div>
+        <div id="hashOutput" class="code-block" style="display:none"></div>
+      </div>
+    </section>
+
+    <!-- ======== SETTINGS ======== -->
+    <section id="tab-settings" class="tab-panel fade-in" style="display:none">
+      <!-- License -->
+      <div class="card" style="margin-bottom: var(--space-3)">
+        <div class="section-title" style="margin-bottom: var(--space-3)">🔑 License</div>
+        <div class="form-group">
+          <label class="label" for="licenseKeyInput">License Key</label>
+          <input type="text" id="licenseKeyInput" class="input" placeholder="NEXORA-PLAN-XXXX-XXXX-XXXX" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="label" for="backendUrlInput">Backend URL</label>
+          <input type="url" id="backendUrlInput" class="input" placeholder="https://your-backend.onrender.com" />
+        </div>
+        <div class="btn-group">
+          <button id="activateLicenseBtn" class="btn btn-primary btn-sm">Activate</button>
+          <button id="checkLicenseBtn" class="btn btn-secondary btn-sm">Check Status</button>
+        </div>
+        <div id="licenseMessage" style="margin-top: var(--space-2); display:none"></div>
+      </div>
+
+      <!-- AI Config -->
+      <div class="card" style="margin-bottom: var(--space-3)">
+        <div class="section-title" style="margin-bottom: var(--space-3)">🤖 AI Configuration</div>
+        <div class="form-group">
+          <label class="label" for="aiEndpointInput">API Endpoint</label>
+          <input type="url" id="aiEndpointInput" class="input" placeholder="https://api.openai.com/v1" />
+        </div>
+        <div class="form-group">
+          <label class="label" for="aiKeyInput">API Key</label>
+          <input type="password" id="aiKeyInput" class="input" placeholder="sk-…" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="label" for="aiModelInput">Model</label>
+          <input type="text" id="aiModelInput" class="input" placeholder="gpt-4o-mini" />
+        </div>
+        <div class="form-group">
+          <label class="label" for="aiProviderInput">Provider Label</label>
+          <input type="text" id="aiProviderInput" class="input" placeholder="OpenAI" />
+        </div>
+        <button id="saveAiBtn" class="btn btn-primary btn-sm">Save AI Settings</button>
+      </div>
+
+      <!-- About -->
+      <div class="card">
+        <div class="section-title" style="margin-bottom: var(--space-2)">About NEXORA</div>
+        <p class="description-text">Version 1.0.0</p>
+        <p class="description-text" style="margin-top: var(--space-1)">Premium multipurpose browser extension. All developer tools operate locally.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module" src="./popup.ts"></script>
+</body>
+</html>
